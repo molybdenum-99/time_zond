@@ -1,8 +1,8 @@
 module TimeZond
   class Parser
-    def time_pattern(mon, day, time, standard: TZOffset.zero, local: TZOffset.zero)
-      # TODO: validations
+    # TODO: validations
 
+    def time_pattern(mon, day, time, standard: TZOffset.zero, local: TZOffset.zero)
       mon = Date::ABBR_MONTHNAMES.index(mon)
       hour, min = time.split(':').map(&:to_i)
 
@@ -56,16 +56,65 @@ module TimeZond
     end
 
     def period(offset, rules_name, format, *until_parts)
+      until_parts << ['Jan'] if until_parts.count == 1 && until_parts.first =~ /^\d{4}$/
+      rls = []
+      offset = TZOffset.parse(offset)
+      case rules_name
+      when /^[+-]?\d+(:\d+?)$/
+        offset += TZOffset.parse(rules_name)
+      when '-'
+        # do nothing
+      else
+        rls = rules.fetch(rules_name)
+      end
+
       Period.new(
-        offset: TZOffset.parse(offset),
-        rules: rules_name == '-' ? [] : rules.fetch(rules_name),
+        offset: offset,
+        rules: rls,
         format: format,
-        to: Time.parse(until_parts.join(' '))
+        to: until_parts.empty? ? nil : Time.parse(until_parts.join(' '))
       )
     end
 
     def zone(name, *first_period)
-      Zone.new(name, [period(*first_period)])
+      Zone.new(name, [period(*first_period)]).tap { |z| Zone.all[name] = z }
+    end
+
+    def file(path)
+      lines = File.read(path).split("\n")
+        .map { |l| l.sub(/\#.*$/, '') }.reject { |ln| ln.strip.empty? }
+        .map { |ln| ln.split(/\s+/) }
+
+      zone_data = []
+      until lines.empty?
+        ln = lines.shift
+        begin
+          case ln.first
+          when 'Link', 'Leap' # ignoring for now
+          when 'Rule'
+            rule(*ln[1..-1])
+          when 'Zone'
+            # Can't parse it here until all rules are defined
+            zone_data << [ln[1..-1], []]
+            while !lines.empty? && lines.first.first.empty?
+              zone_data.last.last << lines.shift[1..-1]
+            end
+          else
+            fail 'Unparseable line'
+          end
+        rescue => e
+          fail "Parsing error #{e.message} on #{ln}"
+        end
+      end
+
+      zone_data.each do |ln, plines|
+        begin
+          z = zone(*ln)
+          plines.each { |ln| z.periods << period(*ln) }
+        rescue => e
+          fail "Parsing error #{e.message} on #{ln}"
+        end
+      end
     end
   end
 end

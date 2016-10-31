@@ -113,6 +113,21 @@ module TimeZond
         context 'when rule is not defined' do
         end
       end
+
+      context 'with until containing only year' do
+        let(:data) { %w[-1:34:04 -	LMT	1907] }
+        its(:to) { is_expected.to eq Time.parse('1907-01-01') }
+      end
+
+      context 'with no until' do
+        let(:data) { %w[1:00	-	CET] }
+        its(:to) { is_expected.to be_nil }
+      end
+
+      context 'with offset instead of rule' do
+        let(:data) { %w[-2:00	1:00	CVST	1945 Oct 15] }
+        its(:offset) { is_expected.to eq TZOffset.parse('-1') }
+      end
     end
 
     describe '#zone' do
@@ -122,9 +137,45 @@ module TimeZond
 
       its(:name) { is_expected.to eq 'Africa/Algiers' }
       its(:periods) { is_expected.to eq [parser.period(*data[1..-1])] }
+
+      it 'registers zones' do
+        expect { subject }.to change { Zone.all.key?('Africa/Algiers') }.to true
+      end
     end
 
     describe '#file' do
+      context 'africa' do
+        before { parser.file('spec/fixtures/africa') }
+
+        it 'loads all zones' do
+          expect(Zone.all.keys).to include(*%w[Africa/Algiers Atlantic/Cape_Verde Africa/Ndjamena])
+        end
+
+        context 'zone periods' do
+          subject { Zone.all['Atlantic/Cape_Verde'].periods }
+
+          its(:count) { is_expected.to eq 5 }
+          its_map(:offset) { is_expected.to eq %w[-1:34:04 -2:00 -1:00 -2:00 -1:00].map(&TZOffset.method(:parse)) }
+        end
+      end
+
+      context 'europe' do
+        before { parser.file('spec/fixtures/europe') }
+
+        it 'loads all zones' do
+          expect(Zone.all.keys).to include(*%w[Europe/London Europe/Dublin Europe/Andorra])
+        end
+
+        context 'zone periods' do
+          subject { Zone.all['Europe/London'].periods }
+
+          its(:count) { is_expected.to eq 5 }
+          its_map(:offset) { is_expected.to eq %w[-0:01:15 0:00 1:00 0:00 0:00].map(&TZOffset.method(:parse)) }
+          its_map(:to) {
+            is_expected.to eq ["1847 Dec 1 0:00", "1968 Oct 27", "1971 Oct 31 2:00", "1996 Jan 01"].map(&Time.method(:parse)) + [nil]
+          }
+        end
+      end
     end
 
     describe '#folder' do
