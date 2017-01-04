@@ -33,10 +33,6 @@ module TimeZond
       end
     end
 
-    def rules
-      @rules ||= Hash.new { |h, k| h[k] = [] }
-    end
-
     def rule(name, from_year, to_year, type, mon, on, at, save, letters, offset: TZOffset.zero)
       to_year = from_year if to_year == 'only'
       type = nil if type == '-'
@@ -52,32 +48,32 @@ module TimeZond
         save: save,
         offset: offset + save,
         letters: letters
-      ).tap { |r| rules[name] << r }
+      )
     end
 
     def period(offset, rules_name, format, *until_parts)
       until_parts << ['Jan'] if until_parts.count == 1 && until_parts.first =~ /^\d{4}$/
-      rls = []
       offset = TZOffset.parse(offset)
+
       case rules_name
-      when /^[+-]?\d+(:\d+?)$/
-        offset += TZOffset.parse(rules_name)
       when '-'
         # do nothing
+      when /^[+-]?\d+(:\d+?)$/
+        offset += TZOffset.parse(rules_name)
       else
         rls = rules.fetch(rules_name)
       end
 
       Period.new(
         offset: offset,
-        rules: rls,
+        rules: rls || [],
         format: format,
         to: until_parts.empty? ? nil : Time.parse(until_parts.join(' '))
       )
     end
 
-    def zone(name, *first_period)
-      Zone.new(name, [period(*first_period)]).tap { |z| Zone.all[name] = z }
+    def zone(name, *first_period, periods: [])
+      Zone.new(name, [first_period, *periods].map { |p| period(*p) })
     end
 
     def file(path)
@@ -88,11 +84,12 @@ module TimeZond
       zone_data = []
       until lines.empty?
         ln = lines.shift
+
         begin
           case ln.first
           when 'Link', 'Leap' # ignoring for now
           when 'Rule'
-            rule(*ln[1..-1])
+            rules[name] << rule(*ln[1..-1])
           when 'Zone'
             # Can't parse it here until all rules are defined
             zone_data << [ln[1..-1], []]
@@ -109,12 +106,17 @@ module TimeZond
 
       zone_data.each do |ln, plines|
         begin
-          z = zone(*ln)
-          plines.each { |ln| z.periods << period(*ln) }
+          Zone.all[name] = zone(*ln, periods: plines)
         rescue => e
           fail "Parsing error #{e.message} on #{ln}"
         end
       end
+    end
+
+    private
+
+    def rules
+      @rules ||= Hash.new { |h, k| h[k] = [] }
     end
   end
 end

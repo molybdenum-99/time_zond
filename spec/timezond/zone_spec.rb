@@ -1,12 +1,9 @@
 module TimeZond
-  describe Period do
-    describe '.parse' do
-    end
-
+  describe Zone do
     describe '#match?' do
     end
 
-    describe '#at' do
+    describe '#local' do
     end
 
     describe '#convert' do
