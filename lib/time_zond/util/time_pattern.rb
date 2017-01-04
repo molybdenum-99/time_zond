@@ -20,7 +20,7 @@ module TimeZond
         end
       }
 
-      def on(date, standard, local)
+      def on(date, standard, local = nil)
         offset(standard, local).local(date.year, date.month, date.day, hour, min)
       end
 
@@ -33,7 +33,7 @@ module TimeZond
         when :standard
           standard
         when :local
-          local
+          local or fail("Can't instantiate local time")
         end
       end
     end

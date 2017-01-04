@@ -24,10 +24,11 @@ module TimeZond
     attribute :until_day, &:to_i
     attribute :until_time, &Util::TimePattern.method(:parse)
 
-    attr_reader :rule_set
+    attr_reader :rule_set, :until
 
     def initialize(zic_file, **attrs)
       super(**attrs)
+      init_until
       @zic_file = zic_file
       @rule_set = zic_file.rules(@rules) if @rules.is_a?(String)
     end
@@ -37,8 +38,11 @@ module TimeZond
     end
 
     def local(*components)
-      #(gmt_off + off_by_rules(*components)).local(*components)
-      (gmt_off + rules).local(*components)
+      if rules.is_a?(String)
+        local_by_rules(*components) || gmt_off.local(*components)
+      else
+        (gmt_off + rules).local(*components)
+      end
     end
 
     def convert(tm)
@@ -47,9 +51,23 @@ module TimeZond
 
     private
 
-    def off_by_rules(*components)
-      return rules unless rules.is_a?(RuleSet)
-      RuleSet.select(*components)
+    FAR_FUTURE = Time.now + 1000 * 365 * 24 * 3600
+
+    def init_until
+      if until_year
+        @until_month ||= 1
+        @until_day ||= 1
+        @until_time ||= Util::TimePattern.parse('0:00s')
+        @until = until_time.on(Date.new(until_year, until_month, until_day), gmt_off)
+      else
+        @until = FAR_FUTURE
+      end
+    end
+
+    def local_by_rules(*components)
+      rule_set
+        .map { |rule| [rule.activated_at(components.first, gmt_off), (gmt_off + rule.save).local(*components)] }
+        .reject { |activated, tm| !activated || tm < activated }.max_by(&:first)&.last
     end
   end
 end

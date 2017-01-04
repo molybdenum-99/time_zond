@@ -13,4 +13,6 @@ require_relative 'time_zond/rule'
 require_relative 'time_zond/period'
 require_relative 'time_zond/zone'
 
+require_relative 'time_zond/zic_file'
+
 require_relative 'time_zond/parser'

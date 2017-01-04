@@ -83,7 +83,7 @@ module TimeZond
       describe '#initialize' do
       end
 
-      xdescribe '#local' do
+      describe '#local' do
         context 'before any of the rules' do
           it 'uses default offset' do
             expect(period.local(1920, 3, 1)).to eq Time.new(1920, 3, 1, 0, 0, 0, off.to_i)

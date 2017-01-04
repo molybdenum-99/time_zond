@@ -51,7 +51,11 @@ module TimeZond
         end
       end
 
-      context 'when years after'
+      context 'when years after' do
+        let(:year) { 2017 }
+
+        it { is_expected.to eq Time.utc(2016, 5, 15, 14, 0) }
+      end
     end
   end
 end

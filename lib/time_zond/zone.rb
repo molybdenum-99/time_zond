@@ -12,11 +12,14 @@ module TimeZond
 
     def initialize(name, periods)
       @name = name
-      @periods = periods
+      @periods = periods.sort_by(&:until)
     end
 
-    def local(*arg)
-      periods.map { |p| p.local(*arg) }.compact.first
+    def local(*components)
+      periods.each do |period|
+        period.local(*components).tap { |tm| return tm if tm < period.until }
+      end
+      nil
     end
 
     def convert(tm)

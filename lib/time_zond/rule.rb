@@ -29,7 +29,11 @@ module TimeZond
     end
 
     def activated_at(year, standard)
-      return nil unless (@from..@to).cover?(year)
+      return nil if @from > year
+
+      # If rule is (2015, 2016), and we are asking about 2017, the last activation was in
+      #   2016 -- but the rule can still be active, if it is the last one.
+      year = @to if @to < year
       date = on.call(year, @in)
       at.on(date, standard, standard + save)
     end
