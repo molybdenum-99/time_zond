@@ -4,7 +4,7 @@ module TimeZond
   class Rule < Struct
     attribute(:name)
     attribute(:from, &:to_i)
-    attribute(:to){ |y|
+    attribute(:to) { |y|
       case y
       when 'only'
         nil
@@ -36,45 +36,6 @@ module TimeZond
       year = @to if @to < year
       date = on.call(year, @in)
       at.on(date, standard, standard + save)
-    end
-
-    def matches?(y, m = 1, d = 1, h = 0, min = 0, s = 0)
-      if y.is_a?(Time)
-        matches_time?(y)
-      else
-        matches_components?(y, m, d, h, min, s)
-      end
-    end
-
-    private
-
-    #def matches_time?(tm)
-    #end
-
-    #def matches_components?(y, m, d, h, min, s)
-      #return true if m < in
-      #return true if d < on.for(y, m)
-      #!!!!!!! y, m, d, h, min, s <
-    #end
-  end
-end
-
-__END__
-
-    attr_reader :name, :from_year, :to_year, :type, :on, :save, :letters
-
-    def initialize(name:, from_year:, to_year:, type:, on:, save:, letters:)
-      @name = name
-      @from_year = from_year
-      @to_year = to_year
-      @type = type
-      @on = on
-      @save = save
-      @letters = letters
-    end
-
-    def years
-      from_year..to_year
     end
   end
 end

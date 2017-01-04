@@ -11,9 +11,15 @@ module TimeZond
       end
 
       def from_a(array)
-        attributes.keys.count < array.count and
-          fail(ArgumentError, "Too much attributes for #{self}: #{array.count} of #{attributes.keys.count}")
-        new(attributes.keys.zip(array).reject { |k, v| !v }.to_h)
+        validate_array_size(array.count)
+        new(attributes.keys.zip(array).reject { |_, v| !v }.to_h)
+      end
+
+      private
+
+      def validate_array_size(count)
+        count <= attributes.keys.count or
+          fail ArgumentError, "Too much attributes for #{self}: #{count} of #{attributes.keys.count}"
       end
     end
 
@@ -33,7 +39,7 @@ module TimeZond
 
     def inspect
       "#<#{self.class.name} " +
-        to_h.reject { |k, v| !v }.map { |k, v| "#{k}=#{v}"}.join(' ') +
+        to_h.reject { |_, v| !v }.map { |k, v| "#{k}=#{v}" }.join(' ') +
         '>'
     end
 

@@ -3,18 +3,18 @@ require_relative 'rule'
 module TimeZond
   class Period < Struct
     def self.parse(line, file)
-      new(file, attributes.keys.zip(line).reject { |k, v| !v }.to_h)
+      new(file, attributes.keys.zip(line).reject { |_, v| !v }.to_h)
     end
 
-    attribute :gmt_off, TZOffset.method(:parse)
-    attribute :rules, ->(v) {
-      case v
+    attribute :gmt_off, &TZOffset.method(:parse)
+    attribute(:rules) { |rs|
+      case rs
       when '-'
         TZOffset.zero
       when /^[+-]?\d+(:\d+(:\d+)?)?$/
-        TZOffset.parse(v)
+        TZOffset.parse(rs)
       else
-        v
+        rs
       end
     }
 
@@ -83,12 +83,14 @@ module TimeZond
     def convert_by_rules(tm)
       rule_set
         .map { |rule| [rule.activated_at(tm.year, gmt_off), (gmt_off + rule.save).convert(tm)] }
-        .reject { |activated, tm| !activated || tm < activated }.max_by(&:first)&.last
+        .reject { |activated, t| !activated || t < activated }.max_by(&:first)&.last
     end
 
     def local_by_rules(*components)
       rule_set
-        .map { |rule| [rule.activated_at(components.first, gmt_off), (gmt_off + rule.save).local(*components)] }
+        .map { |rule|
+          [rule.activated_at(components.first, gmt_off), (gmt_off + rule.save).local(*components)]
+        }
         .reject { |activated, tm| !activated || tm < activated }.max_by(&:first)&.last
     end
   end

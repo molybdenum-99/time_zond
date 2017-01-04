@@ -36,11 +36,11 @@ module TimeZond
           (1..days_in_month(month, year)).select { |d| (d - 1 + first_wday) % 7 == wday }
         end
 
-        COMMON_YEAR_DAYS_IN_MONTH = [nil, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+        COMMON_YEAR_DAYS_IN_MONTH = [nil, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31].freeze
 
         def days_in_month(month, year)
-           return 29 if month == 2 && Date.gregorian_leap?(year)
-           COMMON_YEAR_DAYS_IN_MONTH[month]
+          return 29 if month == 2 && Date.gregorian_leap?(year)
+          COMMON_YEAR_DAYS_IN_MONTH[month]
         end
       end
 

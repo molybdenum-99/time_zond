@@ -1,0 +1,54 @@
+AllCops:
+  Include:
+    - 'lib/**/*'
+  Exclude:
+    - 'spec/**/*'
+    - 'tmp/**/*'
+    - 'profile/**/*'
+    - 'benchmark/**/*'
+  DisplayCopNames: true
+  TargetRubyVersion: 2.3
+
+Style/FormatString:
+  EnforcedStyle: percent
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/BlockDelimiters:
+  Enabled: false
+
+Metrics/LineLength:
+  Max: 110
+
+Style/Lambda:
+  Enabled: false
+
+Style/SignalException:
+  EnforcedStyle: semantic
+
+Style/Alias:
+  EnforcedStyle: prefer_alias_method
+
+Style/AndOr:
+  Enabled: false
+
+Metrics/MethodLength:
+  Max: 16
+
+Style/MultilineBlockChain:
+  Enabled: false
+
+Lint/FormatParameterMismatch:
+  Enabled: false
+
+# TODO
+
+Style/LeadingCommentSpace:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Lint/EmptyWhen:
+  Enabled: false

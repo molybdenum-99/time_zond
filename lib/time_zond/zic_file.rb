@@ -14,12 +14,12 @@ module TimeZond
     end
 
     def zone(name)
-      raise ArgumentError, "Timezone #{name} not found" unless @zone_data.key?(name)
+      fail ArgumentError, "Timezone #{name} not found" unless @zone_data.key?(name)
       Zone.parse(name, @zone_data[name], self)
     end
 
     def rules(name)
-      raise ArgumentError, "Timezone rule #{name} not found" unless @rule_data.key?(name)
+      fail ArgumentError, "Timezone rule #{name} not found" unless @rule_data.key?(name)
       @rule_data[name].map { |ln| Rule.from_a([name, *ln]) }
     end
 
@@ -28,7 +28,8 @@ module TimeZond
     def parse(lines)
       @current_zone = nil
 
-      lines.each_with_index
+      lines
+        .each_with_index
         .map { |ln, i| [ln.sub(/\#.*$/, ''), i] }
         .reject { |ln, _| ln.strip.empty? }
         .map { |ln, i| [ln.split(/\s+/), i] }
