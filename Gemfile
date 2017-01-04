@@ -7,4 +7,7 @@ gem 'geo_coord'
 group :development do
   gem 'rspec'
   gem 'rspec-its'
+  gem 'tzinfo'
+  gem 'benchmark-ips'
+  gem 'ruby-prof'
 end

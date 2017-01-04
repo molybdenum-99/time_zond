@@ -59,7 +59,9 @@ module TimeZond
         let(:tm) { Time.parse('2016-06-01 14:30:00 +03') }
 
         it 'converts data between timezones' do
-          expect(period.convert(tm)).to eq Time.new(2016, 6, 1, 19, 45, 20, off.to_i + 3600)
+          expect(period.convert(tm))
+            .to eq(Time.new(2016, 6, 1, 19, 45, 20, off.to_i + 3600))
+            .and have_attributes(utc_offset: off.to_i + 3600)
         end
       end
 
@@ -110,6 +112,38 @@ module TimeZond
       end
 
       describe '#convert' do
+        subject { period.convert(tm) }
+
+        context 'before any of the rules' do
+          let(:tm) { Time.parse('1920-03-01 13:30 +0300') }
+
+          it { is_expected
+            .to eq(Time.new(1920, 3, 1, 17, 45, 20, off.to_i))
+            .and have_attributes(utc_offset: off.to_i)
+          }
+        end
+
+        context 'inside the area of one rule' do
+          let(:tm) { Time.parse('1920-06-01 13:30 +0300') }
+          let(:converted_offset) { off + TZOffset.parse('1:10') }
+
+          it { is_expected
+            .to eq(Time.new(1920, 6, 1, 18, 55, 20, converted_offset.to_i))
+            .and have_attributes(utc_offset: converted_offset.to_i)
+          }
+        end
+
+        context 'inside the area of several rules' do
+          it 'uses last rule offset' do
+            expect(period.local(1920, 10, 1)).to eq Time.new(1920, 10, 1, 0, 0, 0, (off + TZOffset.parse('2:15')).to_i)
+          end
+        end
+
+        context 'after the last rule' do
+          it 'uses last rule offset' do
+            expect(period.local(1921, 10, 1)).to eq Time.new(1921, 10, 1, 0, 0, 0, (off + TZOffset.parse('2:15')).to_i)
+          end
+        end
       end
 
       describe '#format'

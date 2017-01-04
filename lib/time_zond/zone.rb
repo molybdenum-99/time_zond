@@ -23,7 +23,8 @@ module TimeZond
     end
 
     def convert(tm)
-      period_for(tm).convert(tm)
+      periods.detect { |period| period.until > tm }.convert(tm)
+      #period_for(tm).convert(tm)
     end
 
     def period_for(tm)

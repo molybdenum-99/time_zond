@@ -24,29 +24,43 @@ module TimeZond
         end
       end
 
+      module MonthWeekdays
+        def call(year, month)
+          Date.new(year, month, select_day(wdays_list(year, month, wday)))
+        end
+
+        private
+
+        def wdays_list(year, month, wday)
+          first_wday = Date.new(year, month).wday
+          (1..days_in_month(month, year)).select { |d| (d - 1 + first_wday) % 7 == wday }
+        end
+
+        COMMON_YEAR_DAYS_IN_MONTH = [nil, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+        def days_in_month(month, year)
+           return 29 if month == 2 && Date.gregorian_leap?(year)
+           COMMON_YEAR_DAYS_IN_MONTH[month]
+        end
+      end
+
       class LastWeekday < self
+        include MonthWeekdays
         attribute(:wday) { |d| Date::ABBR_DAYNAMES.index(d) }
 
-        def call(year, month)
-          month_days(year, month).select { |d| d.wday ==  wday }.last
+        def select_day(list)
+          list.last
         end
       end
 
       class WeekdayAfter < self
+        include MonthWeekdays
         attribute(:wday) { |d| Date::ABBR_DAYNAMES.index(d) }
         attribute(:after, &:to_i)
 
-        def call(year, month)
-          month_days(year, month).detect { |d| d.wday ==  wday && d.day >= after }
+        def select_day(list)
+          list.detect { |d| d >= after }
         end
-      end
-
-      private
-
-      def month_days(year, month)
-        # FIXME: TimeMath should do it dry-er, somehow!
-        TimeMath.day.sequence(Date.new(year, month)...TimeMath.month.next(Date.new(year, month)))
-        # One of ideas: TimeMath.month.period(year, month).to_sequence(:day)
       end
     end
   end
