@@ -46,7 +46,10 @@ module TimeZond
 
       class LastWeekday < self
         include MonthWeekdays
-        attribute(:wday) { |d| Date::ABBR_DAYNAMES.index(d) }
+
+        attribute :wday, &Date::ABBR_DAYNAMES.method(:index)
+
+        private
 
         def select_day(list)
           list.last
@@ -55,8 +58,11 @@ module TimeZond
 
       class WeekdayAfter < self
         include MonthWeekdays
-        attribute(:wday) { |d| Date::ABBR_DAYNAMES.index(d) }
-        attribute(:after, &:to_i)
+
+        attribute :wday, &Date::ABBR_DAYNAMES.method(:index)
+        attribute :after, &:to_i
+
+        private
 
         def select_day(list)
           list.detect { |d| d >= after }

@@ -1,6 +1,5 @@
 module TimeZond
   describe Zone do
-
     describe 'calculations' do
       let(:zone) { ZicFile.read('spec/fixtures/europe').zone('Europe/London') }
 
@@ -99,9 +98,11 @@ module TimeZond
       describe '#now'
     end
 
-    describe '#inspect'
+    describe 'introspection' do
+      subject(:zone) { ZicFile.read('spec/fixtures/europe').zone('Europe/London') }
 
-    describe '#periods' do
+      its(:inspect) { is_expected.to eq '#<TimeZond::Zone Europe/London (5 periods, -00:01:15 - +02:00)>' }
+      its(:to_s) { is_expected.to eq 'Europe/London' }
     end
 
     describe '#period_for'

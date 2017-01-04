@@ -24,7 +24,6 @@ module TimeZond
 
     def convert(tm)
       periods.detect { |period| period.until > tm }.convert(tm)
-      #period_for(tm).convert(tm)
     end
 
     def period_for(tm)
@@ -33,6 +32,15 @@ module TimeZond
 
     def now
       convert(Time.now)
+    end
+
+    def to_s
+      name
+    end
+
+    def inspect
+      '#<%s %s (%i periods, %s - %s)>' %
+        [self.class, name, periods.count, *periods.flat_map(&:offsets).minmax]
     end
   end
 end

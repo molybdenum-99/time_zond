@@ -53,6 +53,14 @@ module TimeZond
       end
     end
 
+    def offsets
+      if rule_set?
+        rule_set.map { |r| gmt_off + r.save }
+      else
+        [gmt_off + rules]
+      end
+    end
+
     private
 
     def rule_set?
