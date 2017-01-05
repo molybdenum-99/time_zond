@@ -101,9 +101,25 @@ module TimeZond
       its(:to_s) { is_expected.to eq 'Europe/London' }
     end
 
-    describe '#period_for'
+    describe '#period' do
+      context 'for time' do
+      end
 
-    describe '#offset_for'
+      context 'for time components' do
+      end
+    end
+
+    describe '#offset' do
+      context 'for time' do
+      end
+
+      context 'for time components' do
+      end
+    end
+
+    describe '#current_period'
+
+    describe '#current_offset'
 
     describe '.guess'
 

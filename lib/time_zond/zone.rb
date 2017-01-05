@@ -23,11 +23,15 @@ module TimeZond
     end
 
     def convert(tm)
-      periods.detect { |period| period.until > tm }.convert(tm)
+      period(tm).convert(tm)
     end
 
-    def period_for(tm)
-      periods.detect { |p| p.match?(tm) }
+    def period(tm)
+      periods.detect { |period| period.until > tm }
+    end
+
+    def current_period
+      period(Time.now)
     end
 
     def now
