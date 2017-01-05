@@ -67,35 +67,31 @@ module TimeZond
           end
         end
 
-        #context 'before the first period' do
-          #let(:components) { [1617, 8, 3] }
-          #it { is_expected.to eq TZOffset.parse('-0:01:15').local(1617, 8, 3, 0, 0, 0) }
-        #end
+        context 'before the first period' do
+          let(:tm) { Time.new(1617, 8, 3, 14, 30, 0, '+04:00') }
+          it { is_expected.to eq TZOffset.parse('-0:01:15').local(1617, 8, 3, 10, 28, 45) }
+        end
 
-        #context 'inside the periods' do
-          #let(:components) { [1971, 10, 3] }
-          #it { is_expected.to eq Time.new(1971, 10, 3, 0, 0, 0, '+01:00') }
-        #end
+        context 'inside the periods' do
+          let(:tm) { Time.new(1971, 10, 3, 14, 30, 0, '+04:00') }
+          it { is_expected.to eq Time.new(1971, 10, 3, 11, 30, 0, '+01:00') }
+        end
 
-        #context 'edge cases' do
-          ## Period of +1 ends at: 1971 Oct 31 2:00u (where "u" means UTC)
-          ## ...from that period PoV, this would calculate to period end 03:00 +01, e.g. 02:00 UTC
-          ## (and thus, should switch to new):
-          #context 'border in old period' do
-            #let(:components) { [1971, 10, 31, 3] }
-            #it { is_expected.to eq Time.new(1971, 10, 31, 3, 0, 0, '+00:00') }
-          #end
-
-          ## ...and from the period PoV, this is inside the period: 02:00 +01, e.g. 01:00 UTC
-          ## (and thus, should be the old period)
-          #context 'border in new period' do
-            #let(:components) { [1971, 10, 31, 2] }
-            #it { is_expected.to eq Time.new(1971, 10, 31, 2, 0, 0, '+01:00') }
-          #end
-        #end
+        context 'edge cases' do
+          # Period of +1 ends at: 1971 Oct 31 2:00u (where "u" means UTC)
+          let(:tm) { Time.utc(1971, 10, 31, 2) }
+          it { is_expected.to eq Time.new(1971, 10, 31, 2, 0, 0, '+00:00') }
+        end
       end
 
-      describe '#now'
+      describe '#now' do
+        let(:tm) { Time.new(1971, 10, 3, 14, 30, 0, '+04:00') }
+        before { Timecop.freeze(tm) }
+        after { Timecop.return }
+
+        subject { zone.now }
+        it { is_expected.to eq Time.new(1971, 10, 3, 11, 30, 0, '+01:00') }
+      end
     end
 
     describe 'introspection' do

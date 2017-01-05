@@ -1,7 +1,9 @@
 require 'rspec/its'
+require 'timecop'
 
 $:.unshift 'lib'
 require 'time_zond'
+
 module RSpec
   module Its
     def its_map(attribute, *options, &block) # rubocop:disable Metrics/AbcSize

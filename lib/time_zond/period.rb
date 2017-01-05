@@ -82,6 +82,7 @@ module TimeZond
 
     def convert_by_rules(tm)
       rule_set
+        .reject { |rule| rule.from > tm.year }
         .map { |rule| [rule.activated_at(tm.year, gmt_off), (gmt_off + rule.save).convert(tm)] }
         .reject { |activated, t| !activated || t < activated }.max_by(&:first)&.last
     end
