@@ -37,5 +37,17 @@ module TimeZond
       date = on.call(year, @in)
       at.on(date, standard, standard + save)
     end
+
+    def inspect
+      '#<%s(%s): %s, %s, activated %s, %s at %s>' %
+        [self.class, name, save, inspect_years, Date::ABBR_MONTHNAMES[self.in], on, at]
+    end
+
+    private
+
+    def inspect_years
+      return from if to == from
+      "#{from}-#{to.to_f.infinite? ? '...' : to}"
+    end
   end
 end

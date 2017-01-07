@@ -2,11 +2,13 @@ module TimeZond
   module Util
     class TimePattern < Struct
       def self.parse(time)
-        from_a(time.scan(/^(\d+):(\d+)([a-z]?)$/).flatten)
+        # TODO: fail on unparseable
+        from_a(time.scan(/^(\d+):(\d+)(?::(\d+))?([a-z]?)$/).flatten)
       end
 
       attribute :hour, &:to_i
       attribute :min, &:to_i
+      attribute :sec, &:to_i
       attribute(:locale) { |letter|
         case letter
         when 'u', 'g', 'z'
@@ -21,7 +23,11 @@ module TimeZond
       }
 
       def on(date, standard, local = nil)
-        offset(standard, local).local(date.year, date.month, date.day, hour, min)
+        offset(standard, local).local(date.year, date.month, date.day, hour, min, sec)
+      end
+
+      def to_s
+        '%02i:%02i:%02i' % [hour, min, sec.to_i]
       end
 
       private

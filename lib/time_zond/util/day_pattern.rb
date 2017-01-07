@@ -22,6 +22,10 @@ module TimeZond
         def call(year, month)
           Date.new(year, month, day)
         end
+
+        def to_s
+          day.to_s
+        end
       end
 
       module MonthWeekdays
@@ -49,6 +53,10 @@ module TimeZond
 
         attribute :wday, &Date::ABBR_DAYNAMES.method(:index)
 
+        def to_s
+          "last #{Date::ABBR_DAYNAMES[wday]}"
+        end
+
         private
 
         def select_day(list)
@@ -61,6 +69,14 @@ module TimeZond
 
         attribute :wday, &Date::ABBR_DAYNAMES.method(:index)
         attribute :after, &:to_i
+
+        def to_s
+          if after == 1
+            "first #{Date::ABBR_DAYNAMES[wday]}"
+          else
+            "#{Date::ABBR_DAYNAMES[wday]} after #{after}"
+          end
+        end
 
         private
 

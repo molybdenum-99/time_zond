@@ -15,6 +15,10 @@ module TimeZond
         new(attributes.keys.zip(array).reject { |_, v| !v }.to_h)
       end
 
+      def inherited(child)
+        child.instance_variable_set('@attributes', attributes.dup)
+      end
+
       private
 
       def validate_array_size(count)

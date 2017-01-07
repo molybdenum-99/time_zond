@@ -3,71 +3,132 @@ require_relative 'rule'
 module TimeZond
   class Period < Struct
     def self.parse(line, file)
-      new(file, attributes.keys.zip(line).reject { |_, v| !v }.to_h)
+      case line[1]
+      when '-', /^[+-]?\d+(:\d+(:\d+)?)?$/
+        OffsetPeriod.from_a(line)
+      else
+        RulesPeriod.from_a([line[0], file.rules(line[1]), line[2..-1]])
+      end
     end
 
-    attribute :gmt_off, &TZOffset.method(:parse)
-    attribute(:rules) { |rs|
-      case rs
-      when '-'
-        TZOffset.zero
-      when /^[+-]?\d+(:\d+(:\d+)?)?$/
-        TZOffset.parse(rs)
-      else
-        rs
-      end
-    }
+    FAR_FUTURE = Time.now + 1000 * 365 * 24 * 3600
 
+    attribute :gmt_off, &TZOffset.method(:parse)
+    attribute :rules
     attribute :format
     attribute :until_year, &:to_i
     attribute :until_month, &Date::ABBR_MONTHNAMES.method(:index)
     attribute :until_day, &:to_i
     attribute :until_time, &Util::TimePattern.method(:parse)
 
-    attr_reader :rule_set, :until
+    attr_reader :until
 
-    def initialize(zic_file, **attrs)
-      super(**attrs)
+    def initialize(**strings)
+      super(**strings)
       init_until
-      @zic_file = zic_file
-      @rule_set = zic_file.rules(rules) if rule_set?
     end
 
-    def matches?(tm)
-      materialize_until(tm.year) <= tm
+    class OffsetPeriod < self
+      # rewrite parsing
+      attribute(:rules) { |rs|
+        case rs
+        when '-'
+          TZOffset.zero
+        when /^[+-]?\d+(:\d+(:\d+)?)?$/
+          TZOffset.parse(rs)
+        end
+      }
+
+      alias_method :add_offset, :rules
+
+      def local(*components)
+        offset.local(*components)
+      end
+
+      def convert(tm)
+        offset.convert(tm)
+      end
+
+      def offsets
+        [offset]
+      end
+
+      def offset
+        gmt_off + add_offset
+      end
+
+      def offset_at(_tm)
+        offset
+      end
+
+      def inspect
+        '#<%s %s (%s)>' % [self.class, offset, inspect_until]
+      end
     end
 
-    def local(*components)
-      if rule_set?
+    class RulesPeriod < self
+      # rewrite parsing
+      attribute(:rules, &:itself)
+
+      def local(*components)
         local_by_rules(*components) || gmt_off.local(*components)
-      else
-        (gmt_off + rules).local(*components)
       end
-    end
 
-    def convert(tm)
-      if rule_set?
+      def convert(tm)
         convert_by_rules(tm) || gmt_off.convert(tm)
-      else
-        (gmt_off + rules).convert(tm)
+      end
+
+      def offsets
+        rules.map { |r| gmt_off + r.save }
+      end
+
+      def offset_at(tm)
+        r = rule_at(tm)
+        r ? gmt_off + r.save : gmt_off
+      end
+
+      def inspect
+        '#<%s %s, rules %s (%s)>' % [self.class, gmt_off, rules.first.name, inspect_until]
+      end
+
+      private
+
+      def convert_by_rules(tm)
+        rules
+          .reject { |rule| rule.from > tm.year }
+          .map { |rule| [rule.activated_at(tm.year, gmt_off), (gmt_off + rule.save).convert(tm)] }
+          .reject { |activated, t| !activated || t < activated }.max_by(&:first)&.last
+      end
+
+      def rule_at(tm)
+        rules
+          .reject { |rule| rule.from > tm.year }
+          .map { |rule| [rule.activated_at(tm.year, gmt_off), (gmt_off + rule.save).convert(tm), rule] }
+          .reject { |activated, t, _r| !activated || t < activated }.max_by(&:first)&.last
+      end
+
+      def local_by_rules(*components)
+        rules
+          .map { |rule|
+            [rule.activated_at(components.first, gmt_off), (gmt_off + rule.save).local(*components)]
+          }
+          .reject { |activated, tm| !activated || tm < activated }.max_by(&:first)&.last
       end
     end
 
-    def offsets
-      if rule_set?
-        rule_set.map { |r| gmt_off + r.save }
-      else
-        [gmt_off + rules]
-      end
+    def current_offset
+      offset_at(Time.now)
+    end
+
+    def current?
+      @until == FAR_FUTURE
     end
 
     private
 
-    def rule_set?
-      rules.is_a?(String)
+    def inspect_until
+      current? ? 'current' : @until.strftime('until %b %d, %Y')
     end
-
-    FAR_FUTURE = Time.now + 1000 * 365 * 24 * 3600
 
     def init_until
       if until_year
@@ -78,21 +139,6 @@ module TimeZond
       else
         @until = FAR_FUTURE
       end
-    end
-
-    def convert_by_rules(tm)
-      rule_set
-        .reject { |rule| rule.from > tm.year }
-        .map { |rule| [rule.activated_at(tm.year, gmt_off), (gmt_off + rule.save).convert(tm)] }
-        .reject { |activated, t| !activated || t < activated }.max_by(&:first)&.last
-    end
-
-    def local_by_rules(*components)
-      rule_set
-        .map { |rule|
-          [rule.activated_at(components.first, gmt_off), (gmt_off + rule.save).local(*components)]
-        }
-        .reject { |activated, tm| !activated || tm < activated }.max_by(&:first)&.last
     end
   end
 end
