@@ -52,17 +52,40 @@ zone.parse('2016-05-01')
 # Navigation through zone components
 # zone consists of periods
 zone.periods # =>
+# => [
+#   #<TimeZond::Period::ByOffset +02:02:04 (until Jan 01, 1880)>,
+#   #<TimeZond::Period::ByOffset +02:02:04 (until May 02, 1924)>,
+#   #<TimeZond::Period::ByOffset +02:00 (until Jun 21, 1930)>,
+#   #<TimeZond::Period::ByOffset +03:00 (until Sep 20, 1941)>,
+#   #<TimeZond::Period::ByRules C-Eur+01:00 (until Nov 06, 1943)>,
+#   #<TimeZond::Period::ByRules Russia+03:00 (until Jul 01, 1990)>,
+#   #<TimeZond::Period::ByOffset +01:00+03:00 (until Sep 29, 1991)>,
+#   #<TimeZond::Period::ByRules E-Eur+02:00 (until Jan 01, 1995)>,
+#   #<TimeZond::Period::ByRules EU+02:00 (current)>
+# ]
+
 zone.current_period
+# => #<TimeZond::Period::ByRules EU+02:00 (current)>
 zone.period_at(tm)
+# => #<TimeZond::Period::ByOffset +02:02:04 (until May 02, 1924)>
 # zone.period_at(2016, 6, 1, 14, 30)
 
 # each period either has one offset ("save"), or list of associated rules:
-zone.periods.first.rules # =>
+zone.periods.first.rules # => #<TZOffset +00:00>
 zone.periods.last.rules
+# => [
+#   #<TimeZond::Rule(EU) 1977-1980, since Apr, first Sun at 01:00:00: +01:00>,
+#   #<TimeZond::Rule(EU) 1977, since Sep, last Sun at 01:00:00: +00:00>,
+#   #<TimeZond::Rule(EU) 1978, since Oct, 1 at 01:00:00: +00:00>,
+#   #<TimeZond::Rule(EU) 1979-1995, since Sep, last Sun at 01:00:00: +00:00>,
+#   #<TimeZond::Rule(EU) 1981-..., since Mar, last Sun at 01:00:00: +01:00>,
+#   #<TimeZond::Rule(EU) 1996-..., since Oct, last Sun at 01:00:00: +00:00>
+# ]
 
 # group of zones
 group = db.group('America')
 group = db.group('America/Argentina')
+group = db.group('America').group('Argentina')
 
 # find zone(s) for country
 db.country('Ukraine') # => zone group
@@ -78,6 +101,61 @@ db.abbreviations
 db.links
 # also works:
 db.country('Ukraine').links
+# All zone groups can act as a whole DB:
+db.country('Ukraine').links.zone('...')
+```
+
+### Working with ZoneInfo documentation
+
+```ruby
+db = TimeZond::ZoneInfo.read(docs: true)
+
+zone = db.zone('Europe/Kiev')
+# => #<TimeZond::Zone Europe/Kiev (9 periods, +01:00 - +05:00) # Most of Ukraine since 1970...>
+puts zone.comment
+# Most of Ukraine since 1970 has been like Kiev.
+# "Kyiv" is the transliteration of the Ukrainian name, but
+# "Kiev" is more common in English.
+zone.periods[1] # => #<TimeZond::Period::ByOffset(KMT) +02:02:04 (until May 02, 1924) # Kiev Mean Time>
+
+zone.comment_group
+# => #<TimeZond::Comments::Group(Ukraine): 10 comments>
+zone.comment_group.comments
+# =>
+# [
+#  #<TimeZond::Comments::Comment(Alexander Krivenyshev, 2011-09-20): On September 20, 2011 the deputies of the Verkhovna Rada...>
+#  ...
+# ]
+c = zone.comment_group.comments[1]
+# => #<TimeZond::Comments::Comment(Alexander Krivenyshev, 2011-09-20): On September 20, 2011 the deputies of the Verkhovna Rada...>
+
+c.author # => Alexander Krivenyshev
+c.date # => #<Date: 2011-09-20 ((2455825j,0s,0n),+0s,2299161j)>
+
+puts c
+# From Alexander Krivenyshev (2011-09-20):
+# On September 20, 2011 the deputies of the Verkhovna Rada agreed to
+# abolish the transfer clock to winter time.
+#
+# Bill No. 8330 of MP from the Party of Regions Oleg Nadoshi got
+# approval from 266 deputies.
+#
+# Ukraine abolishes transfer back to the winter time (in Russian)
+# http://news.mail.ru/politics/6861560/
+#
+# The Ukrainians will no longer change the clock (in Russian)
+# http://www.segodnya.ua/news/14290482.html
+#
+# Deputies cancelled the winter time (in Russian)
+# http://www.pravda.com.ua/rus/news/2011/09/20/6600616/
+
+# Comment groups explanations......
+# All available comment groups:
+
+# Note, that comment groups are not exactly equal neither to countries from iso3166, nor to
+# groups, like America/... They are more vague and ad-hoc, but also more semantic sometimes.
+
+db.comment_group(/Denmark/) # Bingo!
 ```
 
 Comparizon with `tzinfo`

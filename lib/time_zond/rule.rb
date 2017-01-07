@@ -21,7 +21,7 @@ module TimeZond
     attribute(:on, &Util::DayPattern.method(:parse))
     attribute(:at, &Util::TimePattern.method(:parse))
     attribute(:save, &TZOffset.method(:parse))
-    attribute(:letters) { |l| l == '-' ? nil : l }
+    attribute(:letters) { |l| l == '-' ? '' : l }
 
     def initialize(*)
       super
@@ -39,8 +39,8 @@ module TimeZond
     end
 
     def inspect
-      '#<%s(%s): %s, %s, activated %s, %s at %s>' %
-        [self.class, name, save, inspect_years, Date::ABBR_MONTHNAMES[self.in], on, at]
+      '#<%s(%s) %s, since %s, %s at %s: %s>' %
+        [self.class, name, inspect_years, Date::ABBR_MONTHNAMES[self.in], on, at, save]
     end
 
     private

@@ -6,6 +6,7 @@ AllCops:
     - 'tmp/**/*'
     - 'profile/**/*'
     - 'benchmark/**/*'
+    - 'script/**/*'
   DisplayCopNames: true
   TargetRubyVersion: 2.3
 
@@ -41,6 +42,13 @@ Style/MultilineBlockChain:
 
 Lint/FormatParameterMismatch:
   Enabled: false
+
+Style/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+Style/PercentLiteralDelimiters:
+  PreferredDelimiters:
+    "%i": "[]"
 
 # TODO
 

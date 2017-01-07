@@ -14,7 +14,7 @@ module TimeZond
       @version = File.read(File.join(path, 'version')).chomp
       @iso3166 = read_tab(File.join(path, 'iso3166.tab')).map(&:reverse).to_h
       @countries2zones = read_tab(File.join(path, 'zone1970.tab'))
-        .map { |codes, _, zone, *| codes.split(',').map { |c| [c, zone] } }.flatten(1).to_h
+        .flat_map { |codes, _, zone, *| codes.split(',').map { |c| [c, zone] } }.to_h
     end
 
     def countries

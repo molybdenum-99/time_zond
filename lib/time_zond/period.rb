@@ -5,9 +5,9 @@ module TimeZond
     def self.parse(line, file)
       case line[1]
       when '-', /^[+-]?\d+(:\d+(:\d+)?)?$/
-        OffsetPeriod.from_a(line)
+        ByOffset.from_a(line)
       else
-        RulesPeriod.from_a([line[0], file.rules(line[1]), line[2..-1]])
+        ByRules.from_a([line[0], file.rules(line[1]), *line[2..-1]])
       end
     end
 
@@ -28,7 +28,7 @@ module TimeZond
       init_until
     end
 
-    class OffsetPeriod < self
+    class ByOffset < self
       # rewrite parsing
       attribute(:rules) { |rs|
         case rs
@@ -62,11 +62,12 @@ module TimeZond
       end
 
       def inspect
-        '#<%s %s (%s)>' % [self.class, offset, inspect_until]
+        '#<%s(%s) %s%s (%s)>' %
+          [self.class, format, add_offset.zero? ? '' : add_offset, offset, inspect_until]
       end
     end
 
-    class RulesPeriod < self
+    class ByRules < self
       # rewrite parsing
       attribute(:rules, &:itself)
 
@@ -88,10 +89,14 @@ module TimeZond
       end
 
       def inspect
-        '#<%s %s, rules %s (%s)>' % [self.class, gmt_off, rules.first.name, inspect_until]
+        '#<%s(%s) %s%s (%s)>' % [self.class, formats.join('/'), rules.first.name, gmt_off, inspect_until]
       end
 
       private
+
+      def formats
+        format.split('/').flat_map { |f| rules.map(&:letters).sort.uniq.map { |l| f % l } }.uniq
+      end
 
       def convert_by_rules(tm)
         rules
