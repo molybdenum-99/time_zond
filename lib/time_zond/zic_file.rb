@@ -6,9 +6,10 @@ module TimeZond
 
     attr_reader :zone_data, :rule_data
 
-    def initialize(lines)
+    def initialize(lines, comments: false, countries: [])
       @zone_data = Hash.new { |h, k| h[k] = [] }
       @rule_data = Hash.new { |h, k| h[k] = [] }
+      @comments = []
 
       parse(lines)
     end
@@ -28,17 +29,17 @@ module TimeZond
     def parse(lines)
       @current_zone = nil
 
-      lines
-        .each_with_index
-        .map { |ln, i| [ln.sub(/\#.*$/, ''), i] }
-        .reject { |ln, _| ln.strip.empty? }
-        .map { |ln, i| [ln.split(/\s+/), i] }
-        .each { |ln, i| parse_line(ln, i) }
+      lines.each_with_index.to_a.map(&:reverse)
+        .map { |i, ln| [i, *ln.split('#', 2)] }
+        .reject { |_i, ln, _c| !@comments && ln.strip.empty? }
+        .map { |i, ln, c| [i, ln.split(/\s+/), c] }
+        .each { |ln, i| parse_line(ln, c.to_s, i) }
 
       @current_zone = nil
     end
 
-    def parse_line(ln, lineno)
+    def parse_line(ln, comment, lineno)
+      if ln.empty?
       case ln.shift
       when 'Link', 'Leap'
         # ignoring for now
