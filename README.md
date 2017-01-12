@@ -118,15 +118,18 @@ puts zone.comments
 zone.periods[1] # => #<TimeZond::Period::ByOffset(KMT) +02:02:04 (until May 02, 1924) # Kiev Mean Time>
 
 zone.section
-# => #<TimeZond::Comments::Group(Ukraine): 10 comments>
+# => #<TimeZond::Docs::Section(Ukraine): 5 comments>
 zone.section.comments
-# =>
-# [
-#  #<TimeZond::Comments::Comment(Alexander Krivenyshev, 2011-09-20): On September 20, 2011 the deputies of the Verkhovna Rada...>
-#  ...
+# => [
+#   #<TimeZond::Docs::Comment: From Igor Karpov, who works...>,
+#   #<TimeZond::Docs::Comment(Alexander Krivenyshev, 2011-09-20): On September 20, 2011 the d...>,
+#   #<TimeZond::Docs::Comment(Philip Pizzey, 2011-10-18): Today my Ukrainian colleagu...>,
+#   #<TimeZond::Docs::Comment(Udo Schwedt, 2011-10-18): As far as I understand, the...>,
+#   #<TimeZond::Docs::Comment(Vladimir in Moscow via Alois Treindl re Kiev time 1991/2, 2014-02-28): First in Ukraine they chang...>
 # ]
+
 c = zone.section.comments[1]
-# => #<TimeZond::Comments::Comment(Alexander Krivenyshev, 2011-09-20): On September 20, 2011 the deputies of the Verkhovna Rada...>
+# => #<TimeZond::Docs::Comment(Alexander Krivenyshev, 2011-09-20): On September 20, 2011 the d...>
 
 c.author # => Alexander Krivenyshev
 c.date # => #<Date: 2011-09-20 ((2455825j,0s,0n),+0s,2299161j)>

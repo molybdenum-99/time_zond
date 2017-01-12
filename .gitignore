@@ -1,5 +1,5 @@
 tmp
 Gemfile.lock
-docs
+./docs
 **/*.html
 script

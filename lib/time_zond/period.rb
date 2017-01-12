@@ -19,7 +19,7 @@ module TimeZond
     attribute :until_day, &Util::DayPattern.method(:parse)
     attribute :until_time, &Util::TimePattern.method(:parse)
 
-    include Commentable
+    include Docs::Commentable
 
     attr_reader :until
 

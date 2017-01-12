@@ -23,7 +23,7 @@ module TimeZond
     attribute(:save, &TZOffset.method(:parse))
     attribute(:letters) { |l| l == '-' ? '' : l }
 
-    include Commentable
+    include Docs::Commentable
 
     def initialize(*)
       super

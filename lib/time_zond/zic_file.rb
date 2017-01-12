@@ -42,7 +42,7 @@ module TimeZond
 
     def create_objects
       @sections = @context.sections
-        .map { |s| Section.from_a([s.title], comments: s.comments) }
+        .map { |s| Docs::Section.from_a([s.title], comments: s.comments) }
         .map { |s| [s.title, s] }.to_h
       @rules = @context.rules
         .map { |r| Rule.from_a(r.data, comments: r.comments) }.group_by(&:name).to_h

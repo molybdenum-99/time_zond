@@ -15,7 +15,7 @@ module TimeZond
     attribute :periods, ->(ps) { ps.sort_by(&:until) }
     attribute :section, &:itself
 
-    include Commentable
+    include Docs::Commentable
 
     def local(*components)
       periods.each do |period|
