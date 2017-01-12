@@ -107,8 +107,14 @@ db.country('Ukraine').links.zone('...')
 
 ### Working with ZoneInfo documentation
 
+One of the most precious and, at the same time, underestimated aspects of ZoneInfo database
+is its historically gathered documentation. (Take a look at [this article](https://blog.jonudell.net/2009/10/23/a-literary-appreciation-of-the-olsonzoneinfotz-database/)
+for at least partial undesrtanding how cool is that.)
+
+TimeZond tries to return this jewels to you.
+
 ```ruby
-db = TimeZond::ZoneInfo.read # (docs: true)
+db = TimeZond::ZoneInfo.read(docs: true)
 
 zone = db.zone('Europe/Kiev')
 # => #<TimeZond::Zone Europe/Kiev (9 periods, +01:00 - +05:00) # Most of Ukraine since 1970 ...>
@@ -145,20 +151,4 @@ puts c
 # The Ukrainians will no longer change the clock (in Russian) http://www.segodnya.ua/news/14290482.html
 #
 # Deputies cancelled the winter time (in Russian) http://www.pravda.com.ua/rus/news/2011/09/20/6600616/
-
-# Comment groups explanations......
-# All available comment groups:
-
-# Note, that comment groups are not exactly equal neither to countries from iso3166, nor to
-# groups, like America/... They are more vague and ad-hoc, but also more semantic sometimes.
-
-db.comment_group(/Denmark/) # Bingo!
 ```
-
-Comparizon with `tzinfo`
-------------------------
-
-*Introductory note*: As already stated above, TimeZond is _not_ meant to be a replacement to
-`tzinfo`, so the latter is most probably more effective in all situations, both by performance
-and memory usage. TimeZond's strength is more featureful API and ability to discover aspects
-of zoneinfo database.
