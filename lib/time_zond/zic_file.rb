@@ -1,96 +1,65 @@
 module TimeZond
   class ZicFile
-    def self.read(path)
-      new File.read(path).split("\n")
+    def self.read(path, sections: [])
+      new(File.basename(path), File.read(path).split("\n"), sections: sections)
     end
 
     attr_reader :zone_data, :rule_data
 
-    def initialize(lines, comments: false, countries: [])
-      @zone_data = Hash.new { |h, k| h[k] = [] }
-      @rule_data = Hash.new { |h, k| h[k] = [] }
-      @comments = []
+    def initialize(name, lines, comments: false, sections: [])
+      @name = name
+      @comments = comments
 
-      parse(lines)
+      parse(lines, sections)
     end
 
     def zone(name)
-      fail ArgumentError, "Timezone #{name} not found" unless @zone_data.key?(name)
-      Zone.parse(name, @zone_data[name], self)
+      @zones.fetch(name) { fail ArgumentError, "Timezone #{name.inspect} not found" }
+    end
+
+    def section(title)
+      @sections.fetch(title) { fail ArgumentError, "Timezone file section #{title.inspect} not found" }
     end
 
     def rules(name)
-      fail ArgumentError, "Timezone rule #{name} not found" unless @rule_data.key?(name)
-      @rule_data[name].map { |ln| Rule.from_a([name, *ln]) }
+      @rules.fetch(name) { fail ArgumentError, "Timezone rule #{name.inspect} not found" }
     end
 
     private
 
-    def parse(lines)
-      @current_zone = nil
+    def parse(lines, sections)
+      @context = ParseContext.new(@name)
 
       lines.each_with_index.to_a.map(&:reverse)
-        .map { |i, ln| [i, *ln.split('#', 2)] }
-        .reject { |_i, ln, _c| !@comments && ln.strip.empty? }
-        .map { |i, ln, c| [i, ln.split(/\s+/), c] }
-        .each { |ln, i| parse_line(ln, c.to_s, i) }
+        .map { |i, ln| [i, *ln.split('#', 2)] } # .reject { |_i, ln, _c| !@comments && ln.strip.empty? }
+        .map { |i, ln, c| [i, ln.to_s.split(/\s+/), c.to_s.sub(/^\ /, '')] }
+        .each { |i, ln, c| parse_line(ln, c, i, sections) }
 
-      @current_zone = nil
+      create_objects
+
+      @context = nil
     end
 
-    def parse_line(content, comment, lineno)
+    def create_objects
+      @sections = @context.sections
+        .map { |s| Section.from_a([s.title], comments: s.comments) }
+        .map { |s| [s.title, s] }.to_h
+      @rules = @context.rules
+        .map { |r| Rule.from_a(r.data, comments: r.comments) }.group_by(&:name).to_h
+      @zones = @context.zones
+        .map { |z| Zone.parse(self, z.name, z.periods.map { |p| [p.data, p.comments] }, z.section, z.comments) }
+        .map { |z| [z.name, z] }.to_h
+    end
+
+    def parse_line(content, comment, lineno, sections)
       if content.empty?
-        parse_comment(comment, lineno)
+        if sections.include?(comment)
+          @context.section(comment)
+        else
+          @context.comment(comment)
+        end
       else
         parse_content(content, comment, lineno)
-        @state.finalize_comment!
-      end
-    end
-
-    class State
-      attr_reader :rules, :zones
-
-      def initialize
-        @rules = []
-        @zones = []
-        @comment_groups = []
-        @comment_context = :global
-        @comments = {}
-        @current_comment = nil
-      end
-
-      def current_zone
-        @zones.last
-      end
-
-      def current_group
-        @comment_groups.last
-      end
-
-      def finalize_comment
-        @current_comment = nil
-      end
-
-      def fetch_comment(type)
-        if @current_comment.type == type
-          com, @current_comment = @current_comment, nil
-          com
-        end
-      end
-
-      def push_comment(text)
-        @current_comment ||= CommentData.new(@comment_context)
-        @current_comment << text
-        if @comment_context == :group
-          @current_group.comments << text
-        end
-      end
-
-      def comment_context=(contextname)
-        if @comment_context != contextname
-          @comment_context = contextname
-          @current_comment = nil
-        end
       end
     end
 
@@ -109,22 +78,22 @@ module TimeZond
     end
 
     def parse_content(ln, comment, lineno)
-      #case ln.shift
-      #when 'Leap'
-        ## ignoring for now
-      #when 'Link'
-        ## ignoring for now
-      #when 'Rule'
-        #@state.rules << RuleData.new(name: ln.shift, data: ln, comments: [*@state.fetch_comments(:rule), comment]])
-      #when 'Zone'
-        #@state.zones << ZoneData.new(name: ln.shift, comments_group: @state.current_group, comments: @state.fetch_comments(:zone))
-        #@state.current_zone.periods << PeriodData.new(data: ln, comments: [comment])
-        #@state.comment_context = :period
-      #when ''
-        #@state.current_zone.periods << PeriodData.new(data: ln, comments: [*@state.fetch_comments(:period), comment])
-      #else
-        #fail ArgumentError, "Unparseable line #{lineno}: #{ln}"
-      #end
+      case ln.shift
+      when 'Leap'
+        # ignoring for now
+      when 'Link'
+        # ignoring for now
+      when 'Rule'
+        @context.rule(ln, comment: comment)
+      when 'Zone'
+        @context.zone(ln, comment: comment)
+      when ''
+        @context.period(ln, comment: comment)
+      else
+        fail ArgumentError, "Unparseable line #{lineno}: #{ln}"
+      end
     end
   end
 end
+
+require_relative 'zic_file/parse_context'

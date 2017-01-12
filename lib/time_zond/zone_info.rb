@@ -4,17 +4,24 @@ module TimeZond
       new(path)
     end
 
+    ADDITIONAL_SECTIONS = [
+      'Britain (United Kingdom) and Ireland (Eire)',
+      'Europe',
+      'Bosnia and Herzegovina',
+      'Denmark, Faroe Islands, and Greenland',
+    ].freeze
+
     def initialize(path)
       @path = File.expand_path(path)
-      @zics = Dir[File.join(path, '*')]
-        .select { |f| File.basename(f) =~ /^[a-z]+$/ }
-        .reject { |f| File.basename(f) == 'version' }
-        .map(&ZicFile.method(:read))
-
       @version = File.read(File.join(path, 'version')).chomp
       @iso3166 = read_tab(File.join(path, 'iso3166.tab')).map(&:reverse).to_h
       @countries2zones = read_tab(File.join(path, 'zone1970.tab'))
         .flat_map { |codes, _, zone, *| codes.split(',').map { |c| [c, zone] } }.to_h
+
+      @zics = Dir[File.join(path, '*')]
+        .select { |f| File.basename(f) =~ /^[a-z]+$/ }
+        .reject { |f| %w[version backzone].include?(File.basename(f)) } # TODO: probably, backzone should also be parsed?
+        .map { |f| ZicFile.read(f, sections: @iso3166.keys + ADDITIONAL_SECTIONS) }
     end
 
     def countries

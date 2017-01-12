@@ -1,9 +1,11 @@
 module TimeZond
   module Util
     class TimePattern < Struct
+      PATTERN = /^(\d+):(\d+)(?::(\d+))?([a-z]?)$/
+
       def self.parse(time)
-        # TODO: fail on unparseable
-        from_a(time.scan(/^(\d+):(\d+)(?::(\d+))?([a-z]?)$/).flatten)
+        time =~ PATTERN or fail ArgumentError, "Unparseable time #{time.inspect}"
+        from_a(time.scan(PATTERN).flatten)
       end
 
       attribute :hour, &:to_i
@@ -21,6 +23,7 @@ module TimeZond
           fail ArgumentError, "Unparseable time locale: #{time.inspect}"
         end
       }
+
 
       def on(date, standard, local = nil)
         offset(standard, local).local(date.year, date.month, date.day, hour, min, sec)

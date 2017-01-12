@@ -108,25 +108,24 @@ db.country('Ukraine').links.zone('...')
 ### Working with ZoneInfo documentation
 
 ```ruby
-db = TimeZond::ZoneInfo.read(docs: true)
+db = TimeZond::ZoneInfo.read # (docs: true)
 
 zone = db.zone('Europe/Kiev')
-# => #<TimeZond::Zone Europe/Kiev (9 periods, +01:00 - +05:00) # Most of Ukraine since 1970...>
-puts zone.comment
+# => #<TimeZond::Zone Europe/Kiev (9 periods, +01:00 - +05:00) # Most of Ukraine since 1970 ...>
+puts zone.comments
 # Most of Ukraine since 1970 has been like Kiev.
-# "Kyiv" is the transliteration of the Ukrainian name, but
-# "Kiev" is more common in English.
+# "Kyiv" is the transliteration of the Ukrainian name, but "Kiev" is more common in English.
 zone.periods[1] # => #<TimeZond::Period::ByOffset(KMT) +02:02:04 (until May 02, 1924) # Kiev Mean Time>
 
-zone.comment_group
+zone.section
 # => #<TimeZond::Comments::Group(Ukraine): 10 comments>
-zone.comment_group.comments
+zone.section.comments
 # =>
 # [
 #  #<TimeZond::Comments::Comment(Alexander Krivenyshev, 2011-09-20): On September 20, 2011 the deputies of the Verkhovna Rada...>
 #  ...
 # ]
-c = zone.comment_group.comments[1]
+c = zone.section.comments[1]
 # => #<TimeZond::Comments::Comment(Alexander Krivenyshev, 2011-09-20): On September 20, 2011 the deputies of the Verkhovna Rada...>
 
 c.author # => Alexander Krivenyshev
@@ -134,20 +133,15 @@ c.date # => #<Date: 2011-09-20 ((2455825j,0s,0n),+0s,2299161j)>
 
 puts c
 # From Alexander Krivenyshev (2011-09-20):
-# On September 20, 2011 the deputies of the Verkhovna Rada agreed to
-# abolish the transfer clock to winter time.
+# On September 20, 2011 the deputies of the Verkhovna Rada agreed to abolish the transfer clock to winter time.
 #
-# Bill No. 8330 of MP from the Party of Regions Oleg Nadoshi got
-# approval from 266 deputies.
+# Bill No. 8330 of MP from the Party of Regions Oleg Nadoshi got approval from 266 deputies.
 #
-# Ukraine abolishes transfer back to the winter time (in Russian)
-# http://news.mail.ru/politics/6861560/
+# Ukraine abolishes transfer back to the winter time (in Russian) http://news.mail.ru/politics/6861560/
 #
-# The Ukrainians will no longer change the clock (in Russian)
-# http://www.segodnya.ua/news/14290482.html
+# The Ukrainians will no longer change the clock (in Russian) http://www.segodnya.ua/news/14290482.html
 #
-# Deputies cancelled the winter time (in Russian)
-# http://www.pravda.com.ua/rus/news/2011/09/20/6600616/
+# Deputies cancelled the winter time (in Russian) http://www.pravda.com.ua/rus/news/2011/09/20/6600616/
 
 # Comment groups explanations......
 # All available comment groups:

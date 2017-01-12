@@ -23,6 +23,8 @@ module TimeZond
     attribute(:save, &TZOffset.method(:parse))
     attribute(:letters) { |l| l == '-' ? '' : l }
 
+    include Commentable
+
     def initialize(*)
       super
       @to ||= @from
@@ -39,8 +41,8 @@ module TimeZond
     end
 
     def inspect
-      '#<%s(%s) %s, since %s, %s at %s: %s>' %
-        [self.class, name, inspect_years, Date::ABBR_MONTHNAMES[self.in], on, at, save]
+      '#<%s(%s) %s, since %s, %s at %s: %s%s>' %
+        [self.class, name, inspect_years, Date::ABBR_MONTHNAMES[self.in], on, at, save, short_comments]
     end
 
     private

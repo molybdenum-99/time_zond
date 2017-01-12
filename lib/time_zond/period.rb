@@ -1,13 +1,11 @@
-require_relative 'rule'
-
 module TimeZond
   class Period < Struct
-    def self.parse(line, file)
+    def self.parse(line, comments, file)
       case line[1]
       when '-', /^[+-]?\d+(:\d+(:\d+)?)?$/
-        ByOffset.from_a(line)
+        ByOffset.from_a(line, comments: comments)
       else
-        ByRules.from_a([line[0], file.rules(line[1]), *line[2..-1]])
+        ByRules.from_a([line[0], file.rules(line[1]), *line[2..-1]], comments: comments)
       end
     end
 
@@ -18,8 +16,10 @@ module TimeZond
     attribute :format
     attribute :until_year, &:to_i
     attribute :until_month, &Date::ABBR_MONTHNAMES.method(:index)
-    attribute :until_day, &:to_i
+    attribute :until_day, &Util::DayPattern.method(:parse)
     attribute :until_time, &Util::TimePattern.method(:parse)
+
+    include Commentable
 
     attr_reader :until
 
@@ -62,8 +62,8 @@ module TimeZond
       end
 
       def inspect
-        '#<%s(%s) %s%s (%s)>' %
-          [self.class, format, add_offset.zero? ? '' : add_offset, offset, inspect_until]
+        '#<%s(%s) %s%s (%s)%s>' %
+          [self.class, format, add_offset.zero? ? '' : add_offset, offset, inspect_until, short_comments]
       end
     end
 
@@ -89,7 +89,8 @@ module TimeZond
       end
 
       def inspect
-        '#<%s(%s) %s%s (%s)>' % [self.class, formats.join('/'), rules.first.name, gmt_off, inspect_until]
+        '#<%s(%s) %s%s (%s)%s>' %
+          [self.class, formats.join('/'), rules.first.name, gmt_off, inspect_until, short_comments]
       end
 
       private
@@ -138,9 +139,9 @@ module TimeZond
     def init_until
       if until_year
         @until_month ||= 1
-        @until_day ||= 1
+        @until_day ||= Util::DayPattern.parse('1')
         @until_time ||= Util::TimePattern.parse('0:00s')
-        @until = until_time.on(Date.new(until_year, until_month, until_day), gmt_off)
+        @until = until_time.on(until_day.call(until_year, until_month), gmt_off)
       else
         @until = FAR_FUTURE
       end

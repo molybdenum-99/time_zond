@@ -1,19 +1,21 @@
 module TimeZond
-  class Zone
-    def self.all
-      @all ||= {}
+  class Zone < Struct
+    def self.parse(file, name, periods, section, comments)
+      from_a(
+        [
+          name,
+          periods.map { |data, comments| Period.parse(data, comments, file) },
+          section && file.section(section)
+        ],
+        comments: comments
+      )
     end
 
-    def self.parse(name, periods, file)
-      new(name, periods.map { |ln| Period.parse(ln, file) })
-    end
+    attribute :name
+    attribute :periods, ->(ps) { ps.sort_by(&:until) }
+    attribute :section, &:itself
 
-    attr_reader :name, :periods
-
-    def initialize(name, periods)
-      @name = name
-      @periods = periods.sort_by(&:until)
-    end
+    include Commentable
 
     def local(*components)
       periods.each do |period|
@@ -61,8 +63,8 @@ module TimeZond
     end
 
     def inspect
-      '#<%s %s (%i periods, %s - %s)>' %
-        [self.class, name, periods.count, *periods.flat_map(&:offsets).minmax]
+      '#<%s %s (%i periods, %s - %s)%s>' %
+        [self.class, name, periods.count, *periods.flat_map(&:offsets).minmax, short_comments]
     end
   end
 end

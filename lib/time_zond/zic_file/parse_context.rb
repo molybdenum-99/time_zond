@@ -2,13 +2,34 @@ require 'ostruct'
 
 module TimeZond
   class ZicFile::ParseContext
+    class CommentPart < OpenStruct
+    end
+
     class CodeObject < OpenStruct
+      def initialize(**)
+        super
+        self.comments ||= [CommentPart.new]
+      end
+
       def push_comment(line)
-        if self.comment.to_s.empty?
-          self.comment = line
+        if current_comment.text.to_s.empty?
+          current_comment.text = line
+        elsif line.empty?
+          current_comment.text << "\n\n"
+        elsif current_comment.text.end_with?('.') || # definitely should be next line
+              line.start_with?('  ')
+          current_comment.text << "\n#{line}"
         else
-          self.comment << "\n#{line}"
+          current_comment.text << " #{line}"
         end
+      end
+
+      def comment_part(**attrs)
+        comments << CommentPart.new(**attrs)
+      end
+
+      def current_comment
+        comments.last
       end
     end
 
@@ -37,15 +58,12 @@ module TimeZond
     attr_reader :sections, :zones, :rules
     attr_reader :current_object, :current_zone
 
-    def initialize
-      @current_object = Comment.new(scope: :global, comment: '')
+    def initialize(filename)
+      @current_object = @file = File.new(title: filename)
+
       @sections = []
       @zones = []
       @rules = []
-    end
-
-    def file(title)
-      @current_object = @file = File.new(title: title)
     end
 
     def section(title)
@@ -57,11 +75,14 @@ module TimeZond
     def comment(line)
       case line
       when /^Zone\t/
-        @current_object = Comment.new(scope: :zone, comment: '')
+        @current_object = Comment.new(scope: :zone)
       when /^Rule\t/
-        @current_object = Comment.new(scope: :rule, comment: '')
+        @current_object = Comment.new(scope: :rule)
       when /^\#{5,}/
         @current_object = @file
+      when /\AFrom ([^\n(:]+) \((\d{4}-\d{2}-\d{2})\)(?:,|:|$)(.*)$/
+        # TODO: ??? # From Hannu Strang (1994-09-25 06:03:37 UTC):
+        @current_object.comment_part(author: $1, date: $2, text: $3.strip)
       else
         @current_object or fail(RuntimeError, "No current object to push comment to")
         @current_object.push_comment(line)
@@ -69,21 +90,24 @@ module TimeZond
     end
 
     def zone(data, comment: '')
-      zones << Zone.new(name: data.shift, section: sections.last, comment: fetch_comment(:zone))
+      zones << Zone.new(name: data.shift, section: sections.last&.title, comments: fetch_comment(:zone) || fetch_comment(:period))
       @current_zone = zones.last
       @current_zone.periods << Period.new(data: data, comment: comment)
-      @current_object = Comment.new(scope: :period, comment: '')
+      @current_object = Comment.new(scope: :period)
     end
 
     def period(data, comment: '')
-      comment = [fetch_comment(:period), comment].compact.reject(&:empty?).join("\n")
-      @current_zone.periods << Period.new(data: data, comment: comment)
+      comments = (fetch_comment(:period) || [])
+        .tap { |cs| cs << CommentPart.new(text: comment) }
+      @current_zone.periods << Period.new(data: data, comments: comments)
     end
 
     def rule(data, comment: '')
-      comment = [fetch_comment(:rule), comment].compact.reject(&:empty?).join("\n")
-      rules << Rule.new(data: data, section: sections.last, comment: comment)
-      @current_object = Comment.new(scope: :rule, comment: '')
+      comments = (fetch_comment(:rule) || [])
+        .tap { |cs| cs << CommentPart.new(text: comment) }
+
+      rules << Rule.new(data: data, section: sections.last, comments: comments)
+      @current_object = Comment.new(scope: :rule)
     end
 
     private
@@ -91,9 +115,7 @@ module TimeZond
     def fetch_comment(scope)
       if @current_object.is_a?(Comment) && @current_object.scope == scope
         # Once fetched, it is gone
-        @current_object.comment.tap { @current_object = Comment.new(scope: @current_object.scope, comment: '') }
-      else
-        ''
+        @current_object.comments.tap { @current_object = Comment.new(scope: @current_object.scope) }
       end
     end
   end
